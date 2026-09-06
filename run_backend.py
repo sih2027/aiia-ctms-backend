@@ -1,5 +1,6 @@
 import os
 import sys
+import secrets
 import subprocess
 from pathlib import Path
 
@@ -18,13 +19,22 @@ def create_env_file():
     print("[INFO] .env file not found.")
     print("[INFO] Creating .env file...")
 
-    env_content = """# AIIA CTMS Environment Configuration
+    # Generate a fresh random secret for THIS install, rather than a
+    # fixed string baked into the script. A hardcoded literal here would
+    # mean every teammate's first-run .env gets the identical secret —
+    # anyone reading this file's source could forge valid JWTs for any
+    # deployment created from it. token_urlsafe(64) gives ~512 bits of
+    # entropy, generated fresh each time create_env_file() actually runs.
+    jwt_secret = secrets.token_urlsafe(64)
+
+    env_content = f"""# AIIA CTMS Environment Configuration
 
 # Supabase PostgreSQL connection string
 DATABASE_URL=YOUR_SUPABASE_DATABASE_URL_HERE
 
-# JWT secret key
-JWT_SECRET_KEY=YqqYEylHCLQAx_jYxd4mrrtp6-9qQHYb8zV8_JIwtDUdTVmJeXV1AWjs83jyP4pOgOoeBNqmuhJ9Dh3wKEZV-w
+# JWT secret key (randomly generated for this install — do not share
+# or commit this value; each clone/environment should have its own)
+JWT_SECRET_KEY={jwt_secret}
 """
 
     ENV_FILE.write_text(env_content, encoding="utf-8")
