@@ -8,6 +8,13 @@ Provides:
 get_current_user and require_role() are meant to be imported by every
 other router you write (/studies, /patients, /ae, ...) — that's the
 "server-side validation on every route" requirement from Section 2.
+
+Every successful login now also writes a hash-chained LOGIN row to
+audit_trail via app.audit_log.log_action() — this is what gives the
+Merkle anchor layer (Section 8) real data to batch and commit. Failed
+login attempts are deliberately NOT logged here: distinguishing a wrong
+password from a nonexistent email in an audit row would leak exactly
+what the identical 401 error message is designed to hide.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -15,6 +22,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
 
+from app.audit_log import log_action
 from app.database import get_db
 from app.models import User
 from app.schemas import LoginRequest, TokenResponse, UserOut
@@ -40,6 +48,16 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         )
 
     token = create_access_token(user_id=user.id, role=user.role)
+
+    log_action(
+        db,
+        user_id=user.id,
+        action="LOGIN",
+        entity_type="user",
+        entity_id=user.id,
+        new_value={"email": user.email, "role": user.role},
+    )
+
     return TokenResponse(access_token=token)
 
 
