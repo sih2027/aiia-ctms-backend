@@ -2,12 +2,13 @@
 Audit trail + blockchain anchor routes. Drop in as app/routers/audit.py.
 
 Provides:
-  POST /audit/anchor  -> batches unanchored audit_trail rows, computes a
-                         Merkle root, commits it on-chain, records the
-                         result in audit_anchor. Admin-only (this is the
-                         "Merkle commit job" from Section 13 Day 5 — a
-                         manual trigger here; wire it to a scheduled job
-                         with FastAPI BackgroundTasks/APScheduler later).
+  POST /audit/anchor  -> manual trigger of the same batch-commit logic
+                         that app/scheduler.py runs automatically on a
+                         timer (Day 5's "scheduled Merkle commit job").
+                         Both call app.anchor_job.run_anchor_once() so
+                         they can never drift apart. Admin-only — useful
+                         for forcing an anchor on demand (e.g. right
+                         before a demo) instead of waiting for the timer.
   GET  /audit/verify  -> recomputes the Merkle root for the most recent
                          anchored batch from the current DB state and
                          compares it to the on-chain value. MATCH means
@@ -26,11 +27,12 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.anchor_job import run_anchor_once
 from app.database import get_db
-from app.merkle_service import compute_merkle_root, get_unanchored_rows
+from app.merkle_service import compute_merkle_root
 from app.models import AuditAnchor, AuditTrail, User
 from app.routers.auth import require_role
-from app.web3_service import commit_merkle_root, read_committed_root_for_block
+from app.web3_service import read_committed_root_for_block
 
 router = APIRouter(prefix="/audit", tags=["audit"])
 
@@ -40,35 +42,10 @@ def anchor_audit_trail(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
 ):
-    rows = get_unanchored_rows(db)
-    merkle_root = compute_merkle_root(rows)
-
-    if merkle_root is None:
+    result = run_anchor_once(db)
+    if result is None:
         return {"anchored": False, "reason": "no new audit_trail rows since last anchor"}
-
-    chain_result = commit_merkle_root(merkle_root)
-
-    anchor = AuditAnchor(
-        batch_start_id=rows[0].id,
-        batch_end_id=rows[-1].id,
-        row_count=len(rows),
-        merkle_root=merkle_root,
-        chain="polygon-amoy-testnet",
-        tx_hash=chain_result["tx_hash"],
-        block_number=chain_result["block_number"],
-        verification_status="pending",
-    )
-    db.add(anchor)
-    db.commit()
-    db.refresh(anchor)
-
-    return {
-        "anchored": True,
-        "row_count": anchor.row_count,
-        "merkle_root": anchor.merkle_root,
-        "tx_hash": anchor.tx_hash,
-        "block_number": anchor.block_number,
-    }
+    return {"anchored": True, **result}
 
 
 @router.get("/verify")
