@@ -17,6 +17,8 @@ password from a nonexistent email in an audit row would leak exactly
 what the identical 401 error message is designed to hide.
 """
 
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
@@ -107,3 +109,12 @@ def require_role(*allowed_roles: str):
 @router.get("/me", response_model=UserOut)
 def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.get("/investigators", response_model=List[UserOut])
+def list_investigators(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List registered Principal Investigators for trial allocation."""
+    return db.query(User).filter(User.role == "pi").order_by(User.name.asc()).all()

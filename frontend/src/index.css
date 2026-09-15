@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --color-gov-navy: #17324D;
+  --color-gov-navy-dark: #0F2235;
+  --color-gov-navy-light: #1F4263;
+  --color-gov-navy-muted: #2A537D;
+
+  --color-ayur-green: #166534;
+  --color-ayur-green-dark: #14532D;
+  --color-ayur-green-light: #EBF5EE;
+  --color-ayur-green-border: #BBDFC5;
+
+  --color-accent-saffron: #E68A00;
+  --color-accent-saffron-light: #FEF3E2;
+  --color-accent-saffron-border: #FCD39B;
+
+  --color-app-bg: #F7F8F5;
+  --color-app-surface: #FFFFFF;
+  --color-app-border: #D9E2DC;
+
+  --color-text-primary: #172026;
+  --color-text-secondary: #52616B;
+  --color-text-muted: #7E8E98;
+
+  --color-status-success: #15803D;
+  --color-status-success-bg: #EDF7EE;
+  --color-status-success-border: #BBDFC5;
+
+  --color-status-warning: #D97706;
+  --color-status-warning-bg: #FEF3C7;
+  --color-status-warning-border: #FCD39B;
+
+  --color-status-danger: #C62828;
+  --color-status-danger-bg: #FEE2E2;
+  --color-status-danger-border: #FCA5A5;
+
+  --color-status-info: #1D4ED8;
+  --color-status-info-bg: #EFF6FF;
+  --color-status-info-border: #BFDBFE;
+}
+
+:root {
+  --gov-navy: #17324D;
+  --ayur-green: #166534;
+  --green-dark: #14532D;
+  --accent-saffron: #E68A00;
+  --app-bg: #F7F8F5;
+  --app-surface: #FFFFFF;
+  --app-border: #D9E2DC;
+  --text-primary: #172026;
+  --text-secondary: #52616B;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Noto Sans Devanagari', sans-serif;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background-color: #F7F8F5;
+  color: #172026;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+

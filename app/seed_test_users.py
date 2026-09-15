@@ -32,6 +32,7 @@ TEST_USERS = [
     {"name": "Dr. Ramesh Pillai", "email": "pv@aiia-ctms.com",          "role": "pharmacovigilance"},
     {"name": "Anita Desai",       "email": "admin@aiia-ctms.com",       "role": "admin"},
     {"name": "Vikram Singh",      "email": "regulator@aiia-ctms.com",   "role": "regulator"},
+    {"name": "Dr. Sunita Rao",    "email": "pi2@aiia-ctms.com",         "role": "pi"},
 ]
 
 

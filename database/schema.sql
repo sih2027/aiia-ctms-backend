@@ -186,10 +186,31 @@ CREATE TABLE audit_anchor (
     CHECK (verification_status IN ('pending','matched','mismatched'))
 );
 
--- Same immutability trigger applied to audit_anchor
+-- Dedicated trigger for audit_anchor that preserves cryptographic ledger immutability
+-- while permitting updates to verification_status upon audit checks
+CREATE OR REPLACE FUNCTION prevent_audit_anchor_modification()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    RAISE EXCEPTION 'audit_anchor records cannot be deleted.';
+  END IF;
+  IF (OLD.id = NEW.id AND
+      OLD.batch_start_id IS NOT DISTINCT FROM NEW.batch_start_id AND
+      OLD.batch_end_id IS NOT DISTINCT FROM NEW.batch_end_id AND
+      OLD.row_count = NEW.row_count AND
+      OLD.merkle_root = NEW.merkle_root AND
+      OLD.chain = NEW.chain AND
+      OLD.tx_hash IS NOT DISTINCT FROM NEW.tx_hash AND
+      OLD.block_number IS NOT DISTINCT FROM NEW.block_number AND
+      OLD.committed_at = NEW.committed_at) THEN
+    RETURN NEW;
+  END IF;
+  RAISE EXCEPTION 'audit_anchor ledger is immutable. Only verification_status may be updated.';
+END; $$ LANGUAGE plpgsql;
+
 CREATE TRIGGER audit_anchor_immutable
 BEFORE UPDATE OR DELETE ON audit_anchor
-FOR EACH ROW EXECUTE FUNCTION prevent_audit_modification();
+FOR EACH ROW EXECUTE FUNCTION prevent_audit_anchor_modification();
 
 -- ------------------------------------------------------------
 -- Recommended indexes (not in the locked spec, but standard
